@@ -1,0 +1,164 @@
+# version: '3.8'
+
+# services:
+# # FE service
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     container_name: frontend
+#     volumes:
+#       - ./frontend/dist:/usr/share/nginx/html:ro
+#     ports:
+#       - "3000:80"
+#     depends_on:
+#       - backend
+#     networks:
+#       - newsaggregator-network
+
+#     # BE service
+#   backend:
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     container_name: backend
+#     volumes:
+#       - ./backend:/var/www/html
+#     expose:
+#       - "9000"
+#     depends_on:
+#      - db
+#     networks:
+#       - newsaggregator-network
+#     environment:
+#       - APP_ENV=local
+#       - APP_KEY=${APP_KEY}
+
+#   # Nginx Service
+#   server:
+#     image: nginx:alpine
+#     container_name: server
+#     volumes:
+#       - ./backend/:/var/www/html
+#       - ./backend/nginx/default.conf:/etc/nginx/conf.d/default.conf
+#     ports:
+#       - "5000:80"
+#     depends_on:
+#       # - frontend
+#       - backend
+#     networks:
+#       - newsaggregator-network
+
+
+
+#   # PostgreSQL DB service
+#   db:
+#     image: postgres:16
+#     container_name: database
+#     environment:
+#       POSTGRES_USER: agwenchez
+#       POSTGRES_PASSWORD: Agwenchez254
+#       POSTGRES_DB: newsaggregator
+#     volumes:
+#       - ./docker-compose:/docker-entrypoint-initdb.d
+#       - pgdata:/var/lib/postgresql/data
+#     networks:
+#       - newsaggregator-network
+
+#   # pgAdmin Service
+#   pgadmin:
+#     image: dpage/pgadmin4
+#     container_name: pgAdmin
+#     ports:
+#       - "5050:80"
+#     depends_on:
+#       - db
+#     # environment:
+#       # PGADMIN_DEFAULT_EMAIL: prasunamudawari@gmail.com
+#       # PGADMIN_DEFAULT_PASSWORD: password
+
+# volumes:
+#   pgdata:
+
+# networks:
+#   newsaggregator-network:
+#     driver: bridge
+
+version: '3.8'
+
+services:
+  # Backend service (Laravel)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    volumes:
+      - ./backend:/var/www/html
+    expose:
+      - "9000"
+    depends_on:
+      - db
+    networks:
+      - newsaggregator-network
+    environment:
+      - APP_ENV=local
+      - APP_KEY=${APP_KEY}
+
+  # Frontend service (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - newsaggregator-network
+
+  # Nginx service
+  server:
+    image: nginx:alpine
+    container_name: server
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./backend:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - newsaggregator-network
+
+  # PostgreSQL DB service
+  db:
+    image: postgres:16
+    container_name: database
+    environment:
+      POSTGRES_USER: agwenchez
+      POSTGRES_PASSWORD: Agwenchez254
+      POSTGRES_DB: newsaggregator
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - newsaggregator-network
+
+  # pgAdmin Service
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgAdmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+
+networks:
+  newsaggregator-network:
+    driver: bridge
