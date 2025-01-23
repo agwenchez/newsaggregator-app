@@ -10,16 +10,23 @@ import {
   sourceLabels,
   sources,
 } from "../@types";
-import { useLazyGetArticlesQuery } from "../app/services";
+import { useLazyGetArticlesQuery, useLazyGetPreferedArticlesQuery,  } from "../app/services";
 import Pagination from "../components/Pagination";
 import dayjs from "dayjs";
+import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useAppDispatch } from "../app/store";
+import { logout } from "../features/auth/authSlice";
+import { useDebounce } from "../hooks/useDebounce";
 
 const HomePage = () => {
+  const auth = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [source, setSource] = useState<Source | "">("");
+  const dispatch = useAppDispatch();
   //   const [category, setCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  //   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [activeFilter, setActiveFilter] = useState<boolean>(true);
   const [dateFilter, setDateFilter] = useState<DatePicker>({
     start_date: undefined,
@@ -27,9 +34,13 @@ const HomePage = () => {
   });
   const { start_date, end_date } = dateFilter;
   // const filteredRef = useRef<searchOrFilter | null>(null);
-  const [trigger, { data: articles, isLoading, isFetching }] =
+  const [trigger, { data: allArticles, isLoading, isFetching }] =
     useLazyGetArticlesQuery({});
 
+  const [triggerPreferredArticles, { data: preferedArticles, isLoading :isPreferredLoading, isFetching: isPreferredFetching }] =
+    useLazyGetPreferedArticlesQuery({});
+
+    const articles = auth?.user ? preferedArticles : allArticles;
   const itemsPerPage = articles?.per_page ?? 10;
   const totalPages = articles?.total
     ? Math.ceil(articles.total / itemsPerPage)
@@ -74,33 +85,48 @@ const HomePage = () => {
 
   useEffect(() => {
     if (!activeFilter) return;
-    trigger({
-      start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
-      end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
-      search_term: searchTerm,
-      page: currentPage,
-      source,
-      category,
-    })
-      .unwrap()
-      .then()
-      .catch((error) => console.log("Error", error));
-    setActiveFilter(false);
-  }, [
-    activeFilter,
-    searchTerm,
-    currentPage,
-    trigger,
-    start_date,
-    end_date,
-    source,
-    category,
-  ]);
+  
+    // Debounced search and filtering(500ms)
+    // const debounceTimeout = setTimeout(() => {
+      trigger({
+        start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
+        end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
+        search_term: searchTerm,
+        page: currentPage,
+        source,
+        category,
+      })
+        .unwrap()
+        .then()
+        .catch((error) => console.log("An error occured while fetching articles", error));
+        
+      triggerPreferredArticles({
+        start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
+        end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
+        search_term: searchTerm,
+        page: currentPage,
+        source,
+        category,
+      })
+        .unwrap()
+        .then()
+        .catch((error) => console.log("An error occured while fetching preferred articles", error));
+  
+      setActiveFilter(false);
+    // }, 500);
+  
+    // return () => clearTimeout(debounceTimeout); 
+  }, [activeFilter, searchTerm, currentPage, trigger, start_date, end_date, source, category, triggerPreferredArticles]);
+  
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     setActiveFilter(true);
     // console.log("Current page", page);
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
   };
 
   return (
@@ -111,16 +137,40 @@ const HomePage = () => {
           <img className="w-24" src="images/logo.png" alt="Logo" />
         </a>
         <ul className="flex space-x-6 mr-6 text-lg">
-          <li>
-            <a href="register.html" className="hover:text-laravel">
-              <i className="fa-solid fa-user-plus"></i> Register
-            </a>
-          </li>
-          <li>
-            <a href="login.html" className="hover:text-laravel">
-              <i className="fa-solid fa-arrow-right-to-bracket"></i> Login
-            </a>
-          </li>
+          {auth?.user ? (
+            <>
+              <li>
+                <Link to={"/register"} className="hover:text-blue-500 pointer">
+                  <i className="fa-solid fa-user-plus"></i>
+                  Preferences
+                </Link>
+              </li>
+              <li>
+                <p
+                  onClick={handleLogout}
+                  className="cursor-pointer hover:text-blue-500"
+                >
+                  <i className="fa-solid fa-arrow-right-to-bracket"></i>
+                  Logout
+                </p>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <Link to={"/register"} className="hover:text-laravel">
+                  <i className="fa-solid fa-user-plus"></i>
+                  Register
+                </Link>
+              </li>
+              <li>
+                <Link to={"/login"} className="hover:text-laravel">
+                  <i className="fa-solid fa-arrow-right-to-bracket"></i>
+                  Login
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </nav>
 
@@ -141,76 +191,88 @@ const HomePage = () => {
             Find or search articles from various sources
           </p>
           <div>
-            <a
+            {/* <a
               href="register.html"
               className="inline-block border-2  border-white text-white py-2 px-4 rounded-xl uppercase mt-2 hover:bg-white hover:text-black hover:border-black"
             >
               Sign Up to Set Preferences
-            </a>
+            </a> */}
+            <Link
+              to={"/register"}
+              className="inline-block border-2  border-white text-white py-2 px-4 rounded-xl uppercase mt-2 hover:bg-white hover:text-black hover:border-black"
+            >
+              <i className="fa-solid fa-arrow-right-to-bracket"></i>
+              Create Account
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Search Form */}
-      <main className="px-24">
-        <div className="flex justify-center items-center gap-4">
-          <form action="" className="w-full">
+      <main className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32">
+        <div className="flex flex-col sm:flex-row justify-center w-full items-center gap-1 sm:gap-4">
+          <form className="w-full sm:w-2/3">
             <div className="relative border-2 border-gray-100 m-4 rounded-lg">
               <div className="absolute top-4 left-3">
                 <i className="fa fa-search text-gray-400 z-20 hover:text-gray-500"></i>
               </div>
               <input
-                type="search"
+                type="text"
                 name="search"
                 value={searchTerm}
                 onChange={handleSearch}
-                className="h-14 w-full pl-10 pr-20 rounded-lg z-0 focus:shadow focus:outline-none"
+                className="h-14 w-full pl-4 md:pl-10 pr-1 md:pr-10 rounded-lg z-0 focus:shadow focus:outline-none"
                 placeholder="Search articles by title or description..."
               />
               <div className="absolute top-2 right-2"></div>
             </div>
           </form>
-          <select
-            id="source-dropdown"
-            value={source}
-            onChange={handleSourceChange}
-            className="mt-1 block w-1/2 p-2 border border-gray-300 rounded-md h-14"
-          >
-            <option value="" onClick={() => setSource("")}>
-              -- Select a Souce --
-            </option>
-            {sources.map((source) => (
-              <option key={source} value={source}>
-                {sourceLabels[source]}
+          <div className="flex gap-1 px-4 sm:gap-4 w-full sm:w-1/3">
+            <select
+              id="source-dropdown"
+              value={source}
+              onChange={handleSourceChange}
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md h-14"
+            >
+              <option value="" onClick={() => setSource("")}>
+                Select a Souce
               </option>
-            ))}
-          </select>
-          <select
-            id="category-dropdown"
-            value={category}
-            onChange={handleCategoryChange}
-            className="mt-1 block w-1/2 p-2 border border-gray-300 rounded-md h-14"
-            disabled={!source} //Disabled if not souce is selected
-          >
-            <option value="" onClick={() => setCategory("")}>
-              -- Select a Category --
-            </option>
-            {/* Display only the category associated with each source */}
-            {availableCategories[source]?.map((category) => (
-              <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+              {sources.map((source) => (
+                <option key={source} value={source}>
+                  {sourceLabels[source]}
+                </option>
+              ))}
+            </select>
+            <select
+              id="category-dropdown"
+              value={category}
+              onChange={handleCategoryChange}
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md h-14"
+              disabled={!source} //Disabled if not souce is selected
+            >
+              <option value="" onClick={() => setCategory("")}>
+                Select a Category
               </option>
-            ))}
-          </select>
+              {/* Display only the category associated with each source */}
+              {availableCategories[source]?.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="lg:grid lg:grid-cols-2 gap-4 space-y-4 md:space-y-0 mx-4 mt-10">
-          {isLoading && !isFetching && (
+          {/* {isLoading && !isFetching && (
             <p className="text-center mt-10">Loading articles...</p>
-          )}
+          )} */}
 
           {isFetching && (
             <p className="text-center mt-4">Fetching articles...</p>
+          )}
+          {!articles?.data.length && !isLoading && !isFetching && (
+            <p className="text-center mt-4">No articles found...</p>
           )}
 
           {!isFetching &&

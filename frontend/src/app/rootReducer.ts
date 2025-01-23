@@ -1,9 +1,12 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import { articlesApi, } from "./services";
+import { articlesApi, authApi, preferencesApi, } from "./services";
+import authReducer from "../features/auth/authSlice";
 
 const rootReducer = combineReducers({
-//   auth: authReducer,
+  auth: authReducer,
   [articlesApi.reducerPath]: articlesApi.reducer,
+  [preferencesApi.reducerPath]: preferencesApi.reducer,
+  [authApi.reducerPath]: authApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

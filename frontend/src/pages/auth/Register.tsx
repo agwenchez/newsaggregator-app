@@ -1,5 +1,46 @@
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../../app/store";
+import { useRegisterMutation } from "../../app/services/authService";
+import { setCredentials } from "../../features/auth/authSlice";
+import { toast } from "react-toastify";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [registerUser, { isLoading }] = useRegisterMutation();
+  const {
+    register,
+    watch,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = (data: Record<string, string>) => {
+    console.log(data);
+    const { name, email, password } = data;
+    const formData = {
+      name,
+      email,
+      password,
+    };
+    registerUser(formData)
+      .unwrap()
+      .then((result) => {
+        const { user, token } = result;
+        if (result) {
+          dispatch(
+            setCredentials({
+              user,
+              token,
+            })
+          );
+          navigate("/");
+          toast.success("Account created successfully!");
+        }
+      })
+      .catch((error) => console.log("An error occured", error));
+  };
   return (
     <div className="mx-4">
       <div className="bg-gray-50 border border-gray-200 p-10 rounded max-w-lg mx-auto mt-24">
@@ -8,7 +49,7 @@ const Register = () => {
           <p className="mb-4">Create an account to post gigs</p>
         </header>
 
-        <form>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-6">
             <label htmlFor="name" className="inline-block text-lg mb-2">
               Name
@@ -17,7 +58,16 @@ const Register = () => {
               type="text"
               id="name"
               className="border border-gray-200 rounded p-2 w-full"
+              required
+              {...register("name", {
+                minLength: 3,
+              })}
             />
+            {errors.name && errors.name.type === "minLength" && (
+              <p className="text-red-500">
+                Name should be atleast 3 characters.
+              </p>
+            )}
           </div>
 
           <div className="mb-6">
@@ -28,10 +78,9 @@ const Register = () => {
               type="email"
               id="email"
               className="border border-gray-200 rounded p-2 w-full"
+              required
+              {...register("email")}
             />
-            <p className="text-red-500 text-xs mt-1">
-              Please enter a valid email
-            </p>
           </div>
 
           <div className="mb-6">
@@ -42,24 +91,47 @@ const Register = () => {
               type="password"
               id="password"
               className="border border-gray-200 rounded p-2 w-full"
+              required
+              {...register("password", {
+                minLength: 6,
+              })}
             />
+            {errors.password && errors.password.type === "minLength" && (
+              <p className="text-red-500">
+                Password should be atleast 6 characters.
+              </p>
+            )}
           </div>
 
           <div className="mb-6">
-            <label htmlFor="password2" className="inline-block text-lg mb-2">
+            <label
+              htmlFor="confirm_password"
+              className="inline-block text-lg mb-2"
+            >
               Confirm Password
             </label>
             <input
               type="password"
-              id="password2"
+              id="confirm_password"
               className="border border-gray-200 rounded p-2 w-full"
+              {...register("confirm_password", {
+                required: true,
+                validate: (val: string) => {
+                  if (watch("password") != val) {
+                    return "Your passwords do no match";
+                  }
+                },
+              })}
             />
+            {errors.confirm_password && (
+              <p className="text-red-500">Your passwords do not match</p>
+            )}
           </div>
 
           <div className="mb-6">
             <button
               type="submit"
-              className="bg-laravel text-white rounded py-2 px-4 hover:bg-black"
+              className="bg-black w-full text-white rounded py-2 px-4 hover:bg-green-500"
             >
               Sign Up
             </button>
@@ -75,7 +147,6 @@ const Register = () => {
           </div>
         </form>
       </div>
-
     </div>
   );
 };

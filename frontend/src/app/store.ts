@@ -13,9 +13,10 @@ import {
 } from "redux-persist";
 
 import storage from "redux-persist/lib/storage";
-import { articlesApi } from "./services";
+import { articlesApi, authApi, preferencesApi } from "./services";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import rootReducer, { RootState } from "./rootReducer";
+import { loadState } from "./localStorage";
 
 const persistConfig = {
   key: "root",
@@ -23,15 +24,16 @@ const persistConfig = {
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
-
+const persistedState = loadState();
 const store = configureStore({
   reducer: persistedReducer,
+  preloadedState: persistedState,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(articlesApi.middleware),
+    }).concat(articlesApi.middleware, authApi.middleware,  preferencesApi.middleware),
 });
 
 export const persistor = persistStore(store);

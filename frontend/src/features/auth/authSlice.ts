@@ -1,21 +1,21 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { MerchantAuthState } from "../../@types";
+import { AuthState } from "../../@types";
 import { RootState } from "../../app/rootReducer";
 
-const INITIAL_STATE: MerchantAuthState = {
-  merchant: undefined,
-  access_token: undefined,
+const INITIAL_STATE: AuthState = {
+  user: undefined,
+  token: "",
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    merchant: undefined,
-    access_token: undefined,
-  } as MerchantAuthState,
+    user: undefined,
+    token: "",
+  } as AuthState,
 
   reducers: {
-    setCredentials: (_, action: PayloadAction<MerchantAuthState>) => {
+    setCredentials: (_, action: PayloadAction<AuthState>) => {
       return { ...action.payload };
     },
     logout: () => {
@@ -26,5 +26,5 @@ const authSlice = createSlice({
 
 export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;
-export const selectCurrentMerchant = (state: RootState) => state.auth.merchant;
-export const selectCurrentMerchantToken = (state: RootState) => state.auth.access_token;
+export const selectCurrentUser = (state: RootState) => state.auth.user;
+export const selectCurrentUserToken = (state: RootState) => state.auth.token;

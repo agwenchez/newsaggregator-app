@@ -13,7 +13,7 @@ export const articlesApi = createApi({
     getArticles: builder.query<ArticlesResponse, ArticleFilters>({
       query: (params) => {
         const paramsCopy: Record<string, string> = {};
-        // Dynamically add other non-empty parameters
+        // Dynamically remove non-empty parameters
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined && value !== "") {
             paramsCopy[key] = value;
