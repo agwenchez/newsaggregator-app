@@ -68,7 +68,7 @@ Once the migrations are successful, it's time to scrape articles and populate th
 To start the scheduled command, run the following command
 
 ```bash
-docker exec -it newsaggregator-php php artisan schedule:work
+docker exec -it newsaggregator-php php artisan schedule:run
 ```
 
 The existing scheduled command will execute hourly but if you wish to manually trigger it you can run
@@ -107,12 +107,16 @@ docker build -t frontend .
 This will build the Docker image based on the Dockerfile in the current directory. The image will contain your React application along with all the required dependencies.
 
 
-#### 2.3
+#### 2.3  Run the Frontend on Port 3000
 To run the frontend and expose it on port 3000, execute the following command:
+
+```bash
+docker run -p 3000:80 frontend
+```
+
+This command will start the frontend container and map port 80 inside the container to port 3000 on your local machine. You can now access the frontend by visiting:
 
 ```bash
 http://localhost:3000
 ```
-
-The frontend is now accessible via the above port.
-
+This will open the React app, where you can view and interact with the data that was scraped and stored by the backend.
