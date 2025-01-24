@@ -73,7 +73,7 @@ The backend should now be running on port 8080. You can verify that it is workin
 http://localhost:8080
 ```
 
-This should display `Backend routes for the news aggregrator application` either on browser or postman.
+This should display ``Backend routes for the news aggregrator application`` either on browser or postman.
 
 All APIs are versioned as e.g.
 
