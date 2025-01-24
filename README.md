@@ -26,6 +26,18 @@ First, open a terminal (or command prompt) and navigate to the `backend` directo
 
 ```bash
 cd path/to/backend
+```
+
+### 1.2. Run Docker Compose to Start the Backend
+Once inside the backend folder, use the following command to start the backend services using Docker Compose:
+`docker compose up -d`
+This command will do the following:
+- Pull the necessary Docker images if they are not available locally.
+- Create the required containers based on the docker-compose.yml configuration.
+- Start the backend services in detached mode, meaning they will run in the background.
+- The backend will run in a PHP container and other required services (like the database) will also be set up automatically.
+
+
 
 <!-- 1. make sure to have docker and docker compose installed
 2. cd into the backend folder/directory and run *docker compose up -d*
