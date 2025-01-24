@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>News Scrapper</title>
+    <title>News Aggregator</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -16,7 +16,7 @@
 
 <body class="">
     <main class="">
-        <h3>Backend routes for the news scrapper application.</h3>
+        <h3>Backend routes for the news aggregrator application.</h3>
     </main>
 
 </body>

@@ -3,31 +3,26 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Preference;
 
 class PreferenceController extends Controller
 {
     /**
      * List all preferences for the authenticated user.
      */
-    public function index(Request $request)
+    public function index(Request $request, $user_id)
     {
         try {
-            $user = $request->user();
-
-            if (!$user) {
-                return response()->json(['message' => 'Unauthenticated'], 401);
+            $preferences = Preference::where('user_id', $user_id)->first();
+    
+            if (!$preferences) {
+                return response()->json(['message' => 'No preferences found for this user.'], 404);
             }
-            try {
-                $preferences = $request->user()->preferences;
-                return response()->json(['preferences' => $preferences], 200);
-            } catch (\Exception $e) {
-                \Log::error('Error fetching preferences: ' . $e->getMessage());
-                return response()->json(['error' => 'Failed to fetch preferences' . $user], 500);
-            }
-
+    
+            return response()->json(['preferences' => $preferences], 200);
         } catch (\Exception $e) {
             \Log::error('Error fetching preferences: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to register user here buana.'], 500);
+            return response()->json(['error' => 'Failed to fetch preferences.'], 500);
         }
     }
 

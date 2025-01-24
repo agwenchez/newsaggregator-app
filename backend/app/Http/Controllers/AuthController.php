@@ -61,6 +61,7 @@ class AuthController extends Controller
 
         // Return the token with a 200 response
         return response()->json([
+            'user' => $user,
             'token' => $token,
         ], 200);
     }

@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libxml2-dev \
     unzip \
+    libcurl4-openssl-dev \ 
     && docker-php-ext-install \
     pdo \
     pdo_pgsql \
@@ -29,4 +30,4 @@ WORKDIR /var/www/html
 COPY . .
 
 # Set permissions for Laravel folders and install packages with composer
-RUN chown -R 775 www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && composer install
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && composer install

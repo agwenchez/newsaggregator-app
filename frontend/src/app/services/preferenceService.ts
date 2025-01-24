@@ -10,11 +10,12 @@ import {
   UpdatePreferenceRequest,
 } from "../../@types/preferences";
 import { prepareHeaders } from "../../utils/prepareHeaders";
+import { BASE_URL } from "../../@types/constants";
 
 export const preferencesApi = createApi({
   reducerPath: "preferencesApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api/v1",
+    baseUrl: BASE_URL,
     prepareHeaders,
   }),
   tagTypes: ["preferences"],

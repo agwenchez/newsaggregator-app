@@ -1,16 +1,26 @@
-# Use Nginx to serve the built React app
-FROM nginx:stable-alpine
+FROM node:20-alpine3.20 AS build
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+WORKDIR /usr/src/app
 
-# Copy custom Nginx configuration
-# COPY ./nginx/default.conf /etc/nginx/conf.d/
+COPY package*.json ./
 
-# # Copy the pre-built dist folder from the local machine
-COPY ./dist /usr/share/nginx/html
+# # # Clean npm cache and remove existing node_modules(if any)
+# RUN rm -rf node_modules && rm -f package-lock.json
+
+RUN npm i --legacy-peer-deps
+
+COPY ./ ./
+
+RUN npm run build
+
+FROM nginx:stable-alpine AS production
+
+COPY --from=build /usr/src/app/nginx /etc/nginx/conf.d
+
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+ENTRYPOINT ["nginx", "-g", "daemon off;"] 
 
 
-EXPOSE 3000
-
-CMD ["nginx", "-g", "daemon off;"]

@@ -13,49 +13,6 @@ use Symfony\Component\HttpClient\HttpClient;
 class ScrappingController extends Controller
 {
 
-    // public function scrapeQuotes(): JsonResponse
-    // {
-    //     // initialize a browser-like HTTP client
-    //     $browser = new HttpBrowser(HttpClient::create());
-    //     // download and parse the HTML of the target page
-    //     $crawler = $browser->request('GET', 'https://quotes.toscrape.com/');
-    //     $quotes = [];
-
-    //     // select all quote HTML elements on the page
-    //     $quote_html_elements = $crawler->filter('.quote');
-    //     // var_dump($quote_html_elements);
-    //     // iterate over each quote HTML element and apply the scraping logic
-    //     foreach ($quote_html_elements as $quote_html_element) {
-    //         // create a new quote crawler
-    //         $quote_crawler = new Crawler($quote_html_element);
-    //         // perform the data extraction logic
-    //         $text_html_element = $quote_crawler->filter('.text');
-    //         $raw_text = $text_html_element->text();
-    //         // remove special characters from the raw text information
-    //         $text = str_replace(["\u{201c}", "\u{201d}"], '', $raw_text);
-    //         $author_html_element = $quote_crawler->filter('.author');
-    //         $author = $author_html_element->text();
-    //         $tag_html_elements = $quote_crawler->filter('.tag');
-    //         $tags = [];
-
-    //         foreach ($tag_html_elements as $tag_html_element) {
-    //             $tag = $tag_html_element->textContent;
-    //             $tags[] = $tag;
-    //         }
-
-    //         // create a new quote object with the scraped data
-    //         $quote = [
-    //             'text' => $text,
-    //             'author' => $author,
-    //             'tags' => $tag
-    //         ];
-
-    //         // add the quote object to the quotes array
-    //         $quotes[] = $quote;
-    //     }
-    //     // var_dump($quotes);
-    //     return response()->json(['quotes' => $quotes,]);
-    // }
 
     public function scrapeArticles(Request $request): JsonResponse
     {
@@ -67,12 +24,6 @@ class ScrappingController extends Controller
             return response()->json(['error' => 'Invalid source provided. Allowed sources: bbc, theguardian, nytimes.'], 400);
         }
 
-        // Define base URLs for the sources
-        // $baseUrls = [
-        //     'bbc' => 'https://www.bbc.com',
-        //     'theguardian' => 'https://www.theguardian.com',
-        //     'nytimes' => 'https://www.nytimes.com',
-        // ];
 
         $baseUrls = [
             'bbc' => [
@@ -92,10 +43,6 @@ class ScrappingController extends Controller
             ]
         ];
 
-        // Construct the full URL
-        // $url = rtrim($baseUrls[$source], '/') . '/' . ltrim($category, '/');
-
-        // Initialize a browser-like HTTP client with User-Agent header
         $browser = new HttpBrowser(HttpClient::create([
             'headers' => [
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -197,38 +144,3 @@ class ScrappingController extends Controller
     }
 
 }
-
-// public function filterArticles(Request $request)
-// {
-//     $query = Article::query();
-
-//     // Filter by source
-//     if ($request->filled('source_id')) {
-//         $query->where('source_id', $request->source_id);
-//     }
-
-//     // Filter by category
-//     if ($request->filled('category_id')) {
-//         $query->whereHas('categories', function ($q) use ($request) {
-//             $q->where('id', $request->category_id);
-//         });
-//     }
-
-//     // Filter by date range
-//     if ($request->filled('start_date') && $request->filled('end_date')) {
-//         $query->whereBetween('publish_date', [$request->start_date, $request->end_date]);
-//     }
-
-//     // Keyword search in title or description
-//     if ($request->filled('keyword')) {
-//         $query->where(function ($q) use ($request) {
-//             $q->where('title', 'like', '%' . $request->keyword . '%')
-//               ->orWhere('description', 'like', '%' . $request->keyword . '%');
-//         });
-//     }
-
-//     // Pagination for performance
-//     $articles = $query->with('source', 'categories')->paginate(10);
-
-//     return response()->json($articles);
-// }

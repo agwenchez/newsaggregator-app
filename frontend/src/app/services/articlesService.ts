@@ -1,11 +1,12 @@
 // import { prepareHeaders } from './../../utils/apiUtiils';
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ArticleFilters, ArticlesResponse } from "../../@types";
+import { BASE_URL } from "../../@types/constants";
 
 export const articlesApi = createApi({
   reducerPath: "articlesApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api/v1",
+    baseUrl: BASE_URL,
     // prepareHeaders
   }),
   // tagTypes: ["articles"],
