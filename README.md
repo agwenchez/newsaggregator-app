@@ -48,7 +48,7 @@ This command will do the following:
 After the backend containers are up and running, you need to run the database migrations to set up the necessary tables. Execute the following command:
 
 ```bash
-docker compose up -d
+docker exec -it newsaggregator-php php artisan migrate
 ```
 
 This will run the Laravel artisan migrate command inside the running container. The migrations will create the necessary tables in your database for storing articles and other data.
