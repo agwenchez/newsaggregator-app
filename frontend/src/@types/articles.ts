@@ -93,9 +93,9 @@ export interface ArticleFilters {
   limit?: number;
 }
 
-export interface DatePicker {
-  start_date?: string;
-  end_date?: string;
+export interface DatePickerFilter {
+  start_date: Date | null;
+  end_date: Date | null;
 }
 
 export type searchOrFilter = "search" | "filter";

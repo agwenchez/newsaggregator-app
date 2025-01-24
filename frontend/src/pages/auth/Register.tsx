@@ -46,7 +46,7 @@ const Register = () => {
       <div className="bg-gray-50 border border-gray-200 p-10 rounded max-w-lg mx-auto mt-24">
         <header className="text-center">
           <h2 className="text-2xl font-bold uppercase mb-1">Register</h2>
-          <p className="mb-4">Create an account to post gigs</p>
+          <p className="mb-4">Create an account to view preferred articles</p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)}>

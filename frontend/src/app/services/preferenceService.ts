@@ -1,19 +1,31 @@
 // import { prepareHeaders } from './../../utils/apiUtiils';
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ArticleFilters, ArticlesResponse } from "../../@types";
-import { AddPreferenceRequest, AddPreferenceResponse, Preference } from "../../@types/preferences";
+import {
+  AddPreferenceRequest,
+  AddPreferenceResponse,
+  Author,
+  //   UpdatePreference,
+  UpdatePreferenceRequest,
+} from "../../@types/preferences";
 import { prepareHeaders } from "../../utils/prepareHeaders";
 
 export const preferencesApi = createApi({
   reducerPath: "preferencesApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api/v1",
-    prepareHeaders
+    prepareHeaders,
   }),
-  // tagTypes: ["articles"],
+  tagTypes: ["preferences"],
   endpoints: (builder) => ({
-    getPreferences: builder.query<Preference[], void>({
-      query : () => 'preferences'
+    getPreferences: builder.query({
+      query: () => ({
+        url: "preferences",
+      }),
+      providesTags: ["preferences"],
+    }),
+    getAuthors: builder.query<Author[], void>({
+      query: () => "authors",
     }),
     getPreferedArticles: builder.query<ArticlesResponse, ArticleFilters>({
       query: (params) => {
@@ -31,14 +43,44 @@ export const preferencesApi = createApi({
         };
       },
     }),
-    addPreference: builder.mutation<AddPreferenceResponse, AddPreferenceRequest>({
-        query: (credentials) => ({
-          url: "preferences",
-          method: "POST",
-          body: credentials,
-        }),
+    addPreference: builder.mutation<
+      AddPreferenceResponse,
+      AddPreferenceRequest
+    >({
+      query: (body) => ({
+        url: "preferences",
+        method: "POST",
+        body,
       }),
+      invalidatesTags: ["preferences"],
+    }),
+    updatePreference: builder.mutation<
+      AddPreferenceResponse,
+      UpdatePreferenceRequest
+    >({
+      query: ({ id, body }) => ({
+        url: `preferences/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["preferences"],
+    }),
+    deletePreference: builder.mutation<void, { id: number }>({
+      query: ({ id }) => ({
+        url: `preferences/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["preferences"],
+    }),
   }),
 });
 
-export const { useGetPreferedArticlesQuery, useLazyGetPreferedArticlesQuery } = preferencesApi;
+export const {
+  useGetPreferedArticlesQuery,
+  useLazyGetPreferedArticlesQuery,
+  useGetPreferencesQuery,
+  useAddPreferenceMutation,
+  useUpdatePreferenceMutation,
+  useDeletePreferenceMutation,
+  useGetAuthorsQuery
+} = preferencesApi;

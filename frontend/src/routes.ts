@@ -3,6 +3,7 @@ import IntrinsicAttributes = JSX.IntrinsicAttributes;
 import HomePage from "./pages/HomePage";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
+import PreferencesPage from "./pages/PreferencesPage";
 
 interface RouteConfig {
   path: string;
@@ -12,8 +13,7 @@ interface RouteConfig {
 
 const routes: RouteConfig[] = [
   { path: "/", Element: HomePage, isProtected: false },
-  { path: "/preferences", Element: HomePage, isProtected: true },
-  { path: "/preferred/articles", Element: HomePage, isProtected: true },
+  { path: "/preferences", Element: PreferencesPage, isProtected: true },
   { path: "/preferences/create", Element: HomePage, isProtected: true },
   { path: "/preferences/edit", Element: HomePage, isProtected: true },
   { path: "/register", Element: Register, isProtected: false },

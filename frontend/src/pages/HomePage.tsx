@@ -1,46 +1,59 @@
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   availableCategories,
   Category,
   DateFormat,
-  DatePicker,
+  DatePickerFilter,
   images,
+  searchOrFilter,
   // searchOrFilter,
   Source,
   sourceLabels,
   sources,
 } from "../@types";
-import { useLazyGetArticlesQuery, useLazyGetPreferedArticlesQuery,  } from "../app/services";
+import {
+  useLazyGetArticlesQuery,
+  useLazyGetPreferedArticlesQuery,
+} from "../app/services";
 import Pagination from "../components/Pagination";
 import dayjs from "dayjs";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useAppDispatch } from "../app/store";
 import { logout } from "../features/auth/authSlice";
-import { useDebounce } from "../hooks/useDebounce";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { FaTrash } from "react-icons/fa";
+import CustomDateInput from "../components/CustomDateInput";
 
 const HomePage = () => {
   const auth = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [source, setSource] = useState<Source | "">("");
+  const [category, setCategory] = useState<Category | "">("");
   const dispatch = useAppDispatch();
-  //   const [category, setCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState<string>("");
-const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [activeFilter, setActiveFilter] = useState<boolean>(true);
-  const [dateFilter, setDateFilter] = useState<DatePicker>({
-    start_date: undefined,
-    end_date: undefined,
+  const [openDateFilter, setOpenDateFilter] = useState<boolean>(false);
+  const [dateFilter, setDateFilter] = useState<DatePickerFilter>({
+    start_date: null,
+    end_date: null,
   });
   const { start_date, end_date } = dateFilter;
-  // const filteredRef = useRef<searchOrFilter | null>(null);
+  const filteredRef = useRef<searchOrFilter | null>(null);
   const [trigger, { data: allArticles, isLoading, isFetching }] =
     useLazyGetArticlesQuery({});
 
-  const [triggerPreferredArticles, { data: preferedArticles, isLoading :isPreferredLoading, isFetching: isPreferredFetching }] =
-    useLazyGetPreferedArticlesQuery({});
+  const [
+    triggerPreferredArticles,
+    {
+      data: preferedArticles,
+      isLoading: isPreferredLoading,
+      isFetching: isPreferredFetching,
+    },
+  ] = useLazyGetPreferedArticlesQuery({});
 
-    const articles = auth?.user ? preferedArticles : allArticles;
+  const articles = auth?.user ? preferedArticles : allArticles;
   const itemsPerPage = articles?.per_page ?? 10;
   const totalPages = articles?.total
     ? Math.ceil(articles.total / itemsPerPage)
@@ -50,7 +63,7 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const firstItem = (currentPage - 1) * itemsPerPage + 1;
   const lastItem = Math.min(currentPage * itemsPerPage, articles?.total ?? 0);
-  const [category, setCategory] = useState<Category | "">("");
+
 
   const handleCategoryChange = (
     event: React.ChangeEvent<HTMLSelectElement>
@@ -58,6 +71,7 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
     setCategory(event.target.value as Category);
     setActiveFilter(true);
   };
+
   const handleSourceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSource(event.target.value as Source);
     setActiveFilter(true);
@@ -65,43 +79,78 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    // filteredRef.current = "search";
+    filteredRef.current = "search";
     setSearchTerm(e.target?.value);
+    // setActiveFilter(true);
+  };
+  const clearDateFilter = () => {
+    filteredRef.current = "search";
+    setDateFilter({
+      start_date: null,
+      end_date: null,
+    });
     setActiveFilter(true);
   };
-  // const clearDateFilter = () => {
-  //   filteredRef.current = "search";
-  //   setDateFilter({
-  //     start_date: undefined,
-  //     end_date: undefined,
-  //   });
-  //   setActiveFilter(true);
-  // };
-  // const handleFilter = () => {
-  //   if (start_date && end_date) {
-  //     setActiveFilter(true);
-  //   }
-  // };
+  const clearAllFilters = () => {
+    // if not filters are being used, just exit
+    if(!source || !category || !dateFilter) return
+    setDateFilter({
+      start_date: null,
+      end_date: null,
+    });
+    setSource("")
+    setCategory("")
+    setActiveFilter(true);
+  };
+
+  
+  const handleFilter = (e:React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (start_date && end_date) {
+      setActiveFilter(true);
+    }
+  };
+
+  const toggleDateFilter = () => {
+    setOpenDateFilter((prevState) => !prevState);
+    console.log("Open Date filter", openDateFilter);
+  };
+
+  const handleLogout = useCallback(() => {
+    dispatch(logout());
+    window.location.reload();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const debouncedTimer = setTimeout(() => {
+      //   console.log(`Searching for ${searchTerm}`);
+      setActiveFilter(true);
+    }, 500);
+
+    return () => clearTimeout(debouncedTimer);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (!activeFilter) return;
-  
-    // Debounced search and filtering(500ms)
-    // const debounceTimeout = setTimeout(() => {
-      trigger({
-        start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
-        end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
-        search_term: searchTerm,
-        page: currentPage,
-        source,
-        category,
-      })
-        .unwrap()
-        .then()
-        .catch((error) => console.log("An error occured while fetching articles", error));
-        
+    trigger({
+      start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
+      end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
+      search_term: searchTerm,
+      page: currentPage,
+      source,
+      category,
+    })
+      .unwrap()
+      .then()
+      .catch((error) =>
+        console.log("An error occured while fetching articles", error)
+      );
+
+    if (auth?.user) {
       triggerPreferredArticles({
-        start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
+        start_date: start_date
+          ? dayjs(start_date).format(DateFormat)
+          : undefined,
         end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
         search_term: searchTerm,
         page: currentPage,
@@ -110,37 +159,47 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
       })
         .unwrap()
         .then()
-        .catch((error) => console.log("An error occured while fetching preferred articles", error));
-  
-      setActiveFilter(false);
-    // }, 500);
-  
-    // return () => clearTimeout(debounceTimeout); 
-  }, [activeFilter, searchTerm, currentPage, trigger, start_date, end_date, source, category, triggerPreferredArticles]);
-  
+        .catch((error) =>
+          console.log(
+            "An error occured while fetching preferred  articles",
+            error
+          )
+        );
+    }
+    setActiveFilter(false);
+  }, [
+    activeFilter,
+    searchTerm,
+    currentPage,
+    trigger,
+    start_date,
+    end_date,
+    source,
+    category,
+    triggerPreferredArticles,
+    handleLogout,
+    auth?.user,
+  ]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     setActiveFilter(true);
-    // console.log("Current page", page);
-  };
-
-  const handleLogout = () => {
-    dispatch(logout());
   };
 
   return (
     <div className="mb-48">
       {/* Navigation */}
-      <nav className="flex justify-between items-center mb-4">
-        <a href="index.html">
-          <img className="w-24" src="images/logo.png" alt="Logo" />
-        </a>
+      <nav className="flex justify-between items-center mb-4 pt-4">
+        <h2 className="pl-3">LOGO</h2>
         <ul className="flex space-x-6 mr-6 text-lg">
           {auth?.user ? (
             <>
               <li>
-                <Link to={"/register"} className="hover:text-blue-500 pointer">
+                <Link
+                  to={"/preferences"}
+                  state={{ data: "exampleData" }}
+                  className="hover:text-blue-500 pointer"
+                >
                   <i className="fa-solid fa-user-plus"></i>
                   Preferences
                 </Link>
@@ -191,12 +250,6 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
             Find or search articles from various sources
           </p>
           <div>
-            {/* <a
-              href="register.html"
-              className="inline-block border-2  border-white text-white py-2 px-4 rounded-xl uppercase mt-2 hover:bg-white hover:text-black hover:border-black"
-            >
-              Sign Up to Set Preferences
-            </a> */}
             <Link
               to={"/register"}
               className="inline-block border-2  border-white text-white py-2 px-4 rounded-xl uppercase mt-2 hover:bg-white hover:text-black hover:border-black"
@@ -210,7 +263,7 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
       {/* Search Form */}
       <main className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32">
-        <div className="flex flex-col sm:flex-row justify-center w-full items-center gap-1 sm:gap-4">
+        <div className="flex flex-col sm:flex-row justify-center w-full items-center gap-1 sm:gap-4 relative">
           <form className="w-full sm:w-2/3">
             <div className="relative border-2 border-gray-100 m-4 rounded-lg">
               <div className="absolute top-4 left-3">
@@ -221,21 +274,21 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
                 name="search"
                 value={searchTerm}
                 onChange={handleSearch}
-                className="h-14 w-full pl-4 md:pl-10 pr-1 md:pr-10 rounded-lg z-0 focus:shadow focus:outline-none"
+                className="h-12 w-full pl-4 md:pl-4 pr-1 md:pr-10 rounded-lg z-0 focus:shadow focus:outline-none"
                 placeholder="Search articles by title or description..."
               />
               <div className="absolute top-2 right-2"></div>
             </div>
           </form>
-          <div className="flex gap-1 px-4 sm:gap-4 w-full sm:w-1/3">
+          <div className="flex gap-1 px-4 sm:px-0 sm:mr-3 sm:gap-4 w-full sm:w-1/3">
             <select
               id="source-dropdown"
               value={source}
               onChange={handleSourceChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md h-14"
+              className="mt-1 w-full sm:w-auto pl-4 border border-gray-300 rounded-md h-12 text-sm"
             >
               <option value="" onClick={() => setSource("")}>
-                Select a Souce
+                Select Souce
               </option>
               {sources.map((source) => (
                 <option key={source} value={source}>
@@ -247,11 +300,11 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
               id="category-dropdown"
               value={category}
               onChange={handleCategoryChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md h-14"
-              disabled={!source} //Disabled if not souce is selected
+              className="mt-1 w-full sm:w-auto pl-4 border border-gray-300 rounded-md h-12 text-sm"
+              disabled={!source} //Disabled if no souce is selected
             >
               <option value="" onClick={() => setCategory("")}>
-                Select a Category
+                Select Category
               </option>
               {/* Display only the category associated with each source */}
               {availableCategories[source]?.map((category) => (
@@ -261,15 +314,69 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
               ))}
             </select>
           </div>
+          <div
+            className="border-2 my-1 sm:my-0 w-11/12 sm:w-1/6 text-sm  flex p-3 items-center justify-center rounded-md cursor-pointer"
+            onClick={toggleDateFilter}
+          >
+            <p>Date Filter</p>
+          </div>
+          <div onClick={clearAllFilters} className="w-2/3 sm:w-1/6 flex py-2 px-2 items-center justify-center rounded-md cursor-pointer mr-4 bg-red-500 text-white gap-2">
+            <FaTrash />
+            <p>Clear All</p>
+          </div>
+          {openDateFilter && (
+            <form onSubmit={(e)=>handleFilter(e)} className="absolute right-0 top-[4.5rem] border-2 z-10 bg-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2">
+              <div className="flex items-center justify-center">
+                <label htmlFor="start_date" className="ml-2 mr-1">
+                  From:
+                </label>
+                <DatePicker
+                  selected={start_date}
+                  onChange={(date) =>
+                    setDateFilter({ ...dateFilter, start_date: date })
+                  }
+                  customInput={<CustomDateInput value={start_date} />}
+                />
+              </div>
+              <div className="flex items-center justify-center">
+                <label htmlFor="end_date" className="ml-6 mr-1">
+                  To:
+                </label>
+                <DatePicker
+                  selected={end_date}
+                  onChange={(date) =>
+                    setDateFilter({ ...dateFilter, end_date: date })
+                  }
+                  customInput={<CustomDateInput value={end_date} />}
+                />
+              </div>
+              <div className="flex self-end gap-2">
+                <button
+                type="button"
+                onClick={clearDateFilter}
+                className="self-end bg-red-500 text-white text-sm py-1 px-4 rounded-3xl mt-1"
+              >
+                Clear
+              </button>
+                <button
+                  type="submit"
+                  className="self-end bg-blue-700 text-white text-sm py-1 px-4 rounded-3xl mt-1"
+                >
+                  Filter
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
-        <div className="lg:grid lg:grid-cols-2 gap-4 space-y-4 md:space-y-0 mx-4 mt-10">
-          {/* {isLoading && !isFetching && (
-            <p className="text-center mt-10">Loading articles...</p>
-          )} */}
-
-          {isFetching && (
-            <p className="text-center mt-4">Fetching articles...</p>
+        <div className="lg:grid lg:grid-cols-2 gap-4 space-y-4 md:space-y-0 mx-4 mt-10 mb-20">
+          {(isFetching ||
+            isLoading ||
+            isPreferredFetching ||
+            isPreferredLoading) && (
+            <div className="flex items-center contnet-center min-h-96">
+              <p className="text-center">Fetching articles...</p>
+            </div>
           )}
           {!articles?.data.length && !isLoading && !isFetching && (
             <p className="text-center mt-4">No articles found...</p>
@@ -284,30 +391,26 @@ const debouncedSearchTerm = useDebounce(searchTerm, 500);
               >
                 <div className="flex">
                   <img
-                    className="hidden w-48 mr-6 md:block"
+                    className="w-32 h-40 mr-6 md:block"
                     src={`${images[article.source]}`}
                     //   src={`images/${company.toLowerCase().replace(/ /g, "-")}.png`}
                     alt={`${article.source} - articleimage`}
                   />
                   <div>
-                    <h3 className="text-2xl">
-                      <a href="show.html">{article.title}</a>
+                    <h3 className="text-base sm:text-xl font-bold truncate w-24 sm:w-64">
+                      {article.title}
                     </h3>
-                    <div className="text-xl font-bold mb-4">
+                    <div className="text-xs sm:text-sm mb-4">
                       {article.description}
                     </div>
-                    <ul className="flex">
-                      <li className="flex items-center justify-center bg-red-500 text-white rounded-xl py-1 px-3 mr-2 text-sm">
-                        <p>Category:</p>{" "}
-                        <a href="#" className="pl-2">
-                          {" "}
-                          {article.category}
-                        </a>
+                    <ul className="flex justify-end">
+                      <li className="flex items-center justify-end bg-red-500 text-white rounded-xl py-1 px-3 mr-2 text-sm ">
+                        <p>Category:</p>
+                        <p className="pl-2">{article.category}</p>
                       </li>
                     </ul>
-                    <div className="text-lg mt-4">
-                      <i className="fa-solid fa-location-dot"></i>{" "}
-                      {article.author}
+                    <div className="text-sm sm:text-base mt-4 flex justify-end">
+                      By {article.author}
                     </div>
                   </div>
                 </div>
