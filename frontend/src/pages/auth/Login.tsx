@@ -5,6 +5,7 @@ import { useLoginMutation } from "../../app/services/authService";
 import { LoginRequest } from "../../@types";
 import { setCredentials } from "../../features/auth/authSlice";
 import { toast } from "react-toastify";
+import Spinner from "../../components/Spinner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,12 +18,10 @@ const Login = () => {
   } = useForm();
 
   const onSubmit = (data: LoginRequest) => {
-    console.log(data);
     login(data)
       .unwrap()
       .then((result) => {
         const { user, token } = result;
-        console.log("Result", result)
         if (result) {
           dispatch(
             setCredentials({
@@ -35,9 +34,9 @@ const Login = () => {
         }
       })
       .catch((error) => {
-        console.log("An error occured", error)
-        toast.error(`${error?.data?.message}`)
-    });
+        console.log("An error occured", error);
+        toast.error(`${error?.data?.message}`);
+      });
   };
   return (
     <div className="mx-4">
@@ -84,17 +83,17 @@ const Login = () => {
           <div className="mb-6">
             <button
               type="submit"
-              className="bg-black w-full text-white rounded py-2 px-4 hover:bg-green-500"
+              disabled={isLoading}
+              className="bg-black w-full text-white rounded py-2 px-4 hover:bg-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              Login
+              {isLoading ? <Spinner secondaryColor="black" /> : "Login"}
             </button>
           </div>
 
           <div className="mt-8">
             <p>
               Don't have an account?{" "}
-              {/* <a href="/login" className="text-laravel"></a> */}
-              <Link to={"/register"} className="text-laravel">
+              <Link to={"/register"} className="text-black hover:text-blue-500">
                 Sign Up
               </Link>
             </p>

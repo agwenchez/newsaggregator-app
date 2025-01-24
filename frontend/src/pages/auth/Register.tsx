@@ -4,6 +4,7 @@ import { useAppDispatch } from "../../app/store";
 import { useRegisterMutation } from "../../app/services/authService";
 import { setCredentials } from "../../features/auth/authSlice";
 import { toast } from "react-toastify";
+import Spinner from "../../components/Spinner";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -39,7 +40,12 @@ const Register = () => {
           toast.success("Account created successfully!");
         }
       })
-      .catch((error) => console.log("An error occured", error));
+      .catch((error) => {
+        console.log("An error occured", error)
+        if(error?.data?.message == 'The email has already been taken.'){
+          toast.error("The email has already been taken")
+        }
+      });
   };
   return (
     <div className="mx-4">
@@ -131,16 +137,17 @@ const Register = () => {
           <div className="mb-6">
             <button
               type="submit"
+              disabled={isLoading}
               className="bg-black w-full text-white rounded py-2 px-4 hover:bg-green-500"
             >
-              Sign Up
+              {isLoading ? <Spinner secondaryColor="black" /> : "Sign Up"}
             </button>
           </div>
 
           <div className="mt-8">
             <p>
               Already have an account?{" "}
-              <a href="/login" className="text-laravel">
+              <a href="/login" className="text-black hover:text-blue-500">
                 Login
               </a>
             </p>

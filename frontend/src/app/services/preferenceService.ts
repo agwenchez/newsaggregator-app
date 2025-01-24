@@ -5,6 +5,7 @@ import {
   AddPreferenceRequest,
   AddPreferenceResponse,
   Author,
+  PreferencesResponse,
   //   UpdatePreference,
   UpdatePreferenceRequest,
 } from "../../@types/preferences";
@@ -18,9 +19,9 @@ export const preferencesApi = createApi({
   }),
   tagTypes: ["preferences"],
   endpoints: (builder) => ({
-    getPreferences: builder.query({
-      query: () => ({
-        url: "preferences",
+    getPreferences: builder.query<PreferencesResponse, {id: number | undefined}>({
+      query: ({id}) => ({
+        url: `preferences/${id}`,
       }),
       providesTags: ["preferences"],
     }),

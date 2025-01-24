@@ -1,17 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   availableCategories,
   Category,
   DateFormat,
   DatePickerFilter,
   images,
-  searchOrFilter,
-  // searchOrFilter,
   Source,
   sourceLabels,
   sources,
 } from "../@types";
 import {
+  useGetAuthorsQuery,
   useLazyGetArticlesQuery,
   useLazyGetPreferedArticlesQuery,
 } from "../app/services";
@@ -25,12 +24,14 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaTrash } from "react-icons/fa";
 import CustomDateInput from "../components/CustomDateInput";
+import { Author } from "../@types/preferences";
 
 const HomePage = () => {
   const auth = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [source, setSource] = useState<Source | "">("");
   const [category, setCategory] = useState<Category | "">("");
+  const [author, setAuthor] = useState("");
   const dispatch = useAppDispatch();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<boolean>(true);
@@ -40,9 +41,9 @@ const HomePage = () => {
     end_date: null,
   });
   const { start_date, end_date } = dateFilter;
-  const filteredRef = useRef<searchOrFilter | null>(null);
   const [trigger, { data: allArticles, isLoading, isFetching }] =
     useLazyGetArticlesQuery({});
+  const { data: authors } = useGetAuthorsQuery();
 
   const [
     triggerPreferredArticles,
@@ -64,7 +65,6 @@ const HomePage = () => {
   const firstItem = (currentPage - 1) * itemsPerPage + 1;
   const lastItem = Math.min(currentPage * itemsPerPage, articles?.total ?? 0);
 
-
   const handleCategoryChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -76,15 +76,19 @@ const HomePage = () => {
     setSource(event.target.value as Source);
     setActiveFilter(true);
   };
+  const handleAuthorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setAuthor(event.target.value as Source);
+    setActiveFilter(true);
+  };
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    filteredRef.current = "search";
     setSearchTerm(e.target?.value);
     // setActiveFilter(true);
   };
-  const clearDateFilter = () => {
-    filteredRef.current = "search";
+  const clearDateFilter = (e:React.FormEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    if(!start_date || !end_date) return
     setDateFilter({
       start_date: null,
       end_date: null,
@@ -93,19 +97,20 @@ const HomePage = () => {
   };
   const clearAllFilters = () => {
     // if not filters are being used, just exit
-    if(!source || !category || !dateFilter) return
+    // if (!source || !category || !author) return;
     setDateFilter({
       start_date: null,
       end_date: null,
     });
-    setSource("")
-    setCategory("")
+    setSource("");
+    setCategory("");
+    setAuthor("")
     setActiveFilter(true);
   };
 
-  
-  const handleFilter = (e:React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleFilter = (e: React.FormEvent<HTMLFormElement>) => {
+    if (!dateFilter) return;
+    e.preventDefault();
     if (start_date && end_date) {
       setActiveFilter(true);
     }
@@ -113,7 +118,6 @@ const HomePage = () => {
 
   const toggleDateFilter = () => {
     setOpenDateFilter((prevState) => !prevState);
-    console.log("Open Date filter", openDateFilter);
   };
 
   const handleLogout = useCallback(() => {
@@ -131,7 +135,7 @@ const HomePage = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    if (!activeFilter) return;
+    if (!activeFilter && !auth?.user?.id) return;
     trigger({
       start_date: start_date ? dayjs(start_date).format(DateFormat) : undefined,
       end_date: end_date ? dayjs(end_date).format(DateFormat) : undefined,
@@ -139,6 +143,7 @@ const HomePage = () => {
       page: currentPage,
       source,
       category,
+      author
     })
       .unwrap()
       .then()
@@ -146,6 +151,7 @@ const HomePage = () => {
         console.log("An error occured while fetching articles", error)
       );
 
+    if (!activeFilter) return;
     if (auth?.user) {
       triggerPreferredArticles({
         start_date: start_date
@@ -167,19 +173,7 @@ const HomePage = () => {
         );
     }
     setActiveFilter(false);
-  }, [
-    activeFilter,
-    searchTerm,
-    currentPage,
-    trigger,
-    start_date,
-    end_date,
-    source,
-    category,
-    triggerPreferredArticles,
-    handleLogout,
-    auth?.user,
-  ]);
+  }, [activeFilter, searchTerm, currentPage, trigger, start_date, end_date, source, category, triggerPreferredArticles, handleLogout, auth?.user, author]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -243,26 +237,26 @@ const HomePage = () => {
           }}
         ></div>
         <div className="z-10">
-          <h1 className="text-6xl font-bold uppercase text-white">
+          <h1 className="text-5xl sm:text-6xl font-bold uppercase text-white">
             News<span className="text-red-600">World</span>
           </h1>
-          <p className="text-1xl text-gray-200 font-bold my-4">
+          <p className="text-sm sm:text-1xl text-gray-200 font-bold my-4">
             Find or search articles from various sources
           </p>
           <div>
             <Link
-              to={"/register"}
+              to={auth?.user ? "/preferences" : "/register"}
               className="inline-block border-2  border-white text-white py-2 px-4 rounded-xl uppercase mt-2 hover:bg-white hover:text-black hover:border-black"
             >
               <i className="fa-solid fa-arrow-right-to-bracket"></i>
-              Create Account
+              {auth?.user ? "Edit Preferences" : "Create Preferences"}
             </Link>
           </div>
         </div>
       </section>
 
       {/* Search Form */}
-      <main className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32">
+      <main className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32 flex flex-col">
         <div className="flex flex-col sm:flex-row justify-center w-full items-center gap-1 sm:gap-4 relative">
           <form className="w-full sm:w-2/3">
             <div className="relative border-2 border-gray-100 m-4 rounded-lg">
@@ -280,12 +274,12 @@ const HomePage = () => {
               <div className="absolute top-2 right-2"></div>
             </div>
           </form>
-          <div className="flex gap-1 px-4 sm:px-0 sm:mr-3 sm:gap-4 w-full sm:w-1/3">
+          <div className="flex gap-1 px-4 sm:px-0 sm:mr-[6.5rem] sm:gap-4 w-full sm:w-1/3">
             <select
               id="source-dropdown"
               value={source}
               onChange={handleSourceChange}
-              className="mt-1 w-full sm:w-auto pl-4 border border-gray-300 rounded-md h-12 text-sm"
+              className="mt-1 w-full sm:w-32 pl-4 border border-gray-300 rounded-md h-12 text-sm"
             >
               <option value="" onClick={() => setSource("")}>
                 Select Souce
@@ -300,7 +294,7 @@ const HomePage = () => {
               id="category-dropdown"
               value={category}
               onChange={handleCategoryChange}
-              className="mt-1 w-full sm:w-auto pl-4 border border-gray-300 rounded-md h-12 text-sm"
+              className="mt-1 w-full sm:w-32 pl-4 border border-gray-300 rounded-md h-12 text-sm"
               disabled={!source} //Disabled if no souce is selected
             >
               <option value="" onClick={() => setCategory("")}>
@@ -313,19 +307,44 @@ const HomePage = () => {
                 </option>
               ))}
             </select>
+            <select
+              id="author-dropdown"
+              value={author}
+              onChange={handleAuthorChange}
+              className="mt-1 w-full sm:w-36 pl-4 border border-gray-300 rounded-md h-12 text-sm"
+            >
+              <option value="" onClick={() => setCategory("")}>
+                Select Author
+              </option>
+              {(authors as Author[]) &&
+                authors?.map(({ author }) => (
+                  <option key={author} value={author}>
+                    {author}
+                  </option>
+                ))}
+            </select>
           </div>
+       
+        </div>
+        <div className="flex sm:self-end relative gap-2 ml-4 sm:ml-0">
           <div
-            className="border-2 my-1 sm:my-0 w-11/12 sm:w-1/6 text-sm  flex p-3 items-center justify-center rounded-md cursor-pointer"
+            className="border-2 mt-2 sm:my-0 w-full sm:w-32 text-sm flex p-3 items-center justify-center rounded-md cursor-pointer"
             onClick={toggleDateFilter}
           >
-            <p>Date Filter</p>
+            <p>Filter by Date</p>
           </div>
-          <div onClick={clearAllFilters} className="w-2/3 sm:w-1/6 flex py-2 px-2 items-center justify-center rounded-md cursor-pointer mr-4 bg-red-500 text-white gap-2">
+          <div
+            onClick={clearAllFilters}
+            className="w-full sm:w-28 flex h-12 mt-2 sm:mt-0 items-center justify-center rounded-md cursor-pointer mr-4 bg-red-500 text-white gap-2"
+          >
             <FaTrash />
-            <p>Clear All</p>
+            <p className="text-sm">Clear All</p>
           </div>
           {openDateFilter && (
-            <form onSubmit={(e)=>handleFilter(e)} className="absolute right-0 top-[4.5rem] border-2 z-10 bg-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2">
+            <form
+              onSubmit={(e) => handleFilter(e)}
+              className="absolute sm:right-0 top-[3.8rem] sm:top-[4rem] border-2 z-10 bg-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2"
+            >
               <div className="flex items-center justify-center">
                 <label htmlFor="start_date" className="ml-2 mr-1">
                   From:
@@ -352,12 +371,12 @@ const HomePage = () => {
               </div>
               <div className="flex self-end gap-2">
                 <button
-                type="button"
-                onClick={clearDateFilter}
-                className="self-end bg-red-500 text-white text-sm py-1 px-4 rounded-3xl mt-1"
-              >
-                Clear
-              </button>
+                  type="button"
+                  onClick={(e)=>clearDateFilter(e)}
+                  className="self-end bg-red-500 text-white text-sm py-1 px-4 rounded-3xl mt-1"
+                >
+                  Clear
+                </button>
                 <button
                   type="submit"
                   className="self-end bg-blue-700 text-white text-sm py-1 px-4 rounded-3xl mt-1"
@@ -374,11 +393,11 @@ const HomePage = () => {
             isLoading ||
             isPreferredFetching ||
             isPreferredLoading) && (
-            <div className="flex items-center contnet-center min-h-96">
+            <div className="flex items-center justify-center min-h-96">
               <p className="text-center">Fetching articles...</p>
             </div>
           )}
-          {!articles?.data.length && !isLoading && !isFetching && (
+          {!articles?.data.length && !isPreferredLoading && !isPreferredFetching && !isLoading && !isFetching && (
             <p className="text-center mt-4">No articles found...</p>
           )}
 

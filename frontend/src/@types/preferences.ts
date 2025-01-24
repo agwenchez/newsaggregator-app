@@ -19,7 +19,7 @@ export type AddPreferenceRequest = Omit<
 export type UpdatePreferences = Partial<AddPreferenceRequest>;
 
 export interface PreferencesResponse {
-  preferences: Preference[];
+  preferences: Preference;
 }
 
 export type UpdateBodyRequest = Omit<
@@ -35,8 +35,3 @@ export interface UpdatePreferenceRequest {
 export interface Author {
   author: string;
 }
-
-
-// export interface AuthorsResponse{
-
-// }
