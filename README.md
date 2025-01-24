@@ -64,14 +64,20 @@ http://localhost:8080
 This should display `Backend routes for the news aggregrator application` either on browser or postman.
 
 #### 1.5. Scrape Articles and Populate the Database
+Once the migrations are successful, it's time to scrape articles and populate the database.
+To start the scheduled command, run the following command
 
-Once the migrations are successful, it's time to scrape articles and populate the database. Run the following command:
+```bash
+docker exec -it newsaggregator-php php artisan schedule:work
+```
+
+The existing scheduled command will execute hourly but if you wish to manually trigger it you can run
 
 ```bash
 docker exec -it newsaggregator-php php artisan scrape:all-articles
 ```
 
-This command will trigger the scraping process, where the backend will collect articles from various sources and store them in the database.
+Both these commands will trigger the scraping process, where the backend will collect articles from various sources and store them in the database.
 
 Once the process is complete, the database will be populated with the scraped articles, and you'll have a fully functional backend.
 
